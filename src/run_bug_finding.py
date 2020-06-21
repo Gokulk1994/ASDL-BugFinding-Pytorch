@@ -23,7 +23,25 @@ def read_json_file(json_file_path: str) -> List:
         # Most likely malformed JSON file
         return []
 
+def all_if_as_bugs(json_file):
 
+    with open(json_file,'r') as fp:
+        data = json.load(fp)
+        
+    raw_code = data['raw_source_code']
+    split_rawcode = raw_code.split("\n")
+    #ifcases = []
+    ifcase_linenumber = []
+    wanted = ['if', '(']
+    unwanted = ['//', '/*']
+
+    for i,line in enumerate(split_rawcode):
+        if (('if (' in line)or('if(' in line)) and ('//' not in line):
+            #ifcases.append(line)
+            ifcase_linenumber.append(i+1)
+
+    return ifcase_linenumber
+    
 def find_bugs_in_js_files(list_of_json_file_paths: List[str], token_embedding: fasttext.FastText) -> Dict[str, List[int]]:
     r"""
     Please DO NOT delete the 'metadata' file in the current directory else your submission will not be scored on codalab.
@@ -61,7 +79,14 @@ def find_bugs_in_js_files(list_of_json_file_paths: List[str], token_embedding: f
     # For each file, the current naive implementation returns a random line number between 1-500
     # Replace this with your own code
     predicted_results = defaultdict(list)
+    
     for fp in list_of_json_file_paths:
-        predicted_results[fp].append(np.random.randint(1, 500))
-
+        bugs = all_if_as_bugs(fp)
+        
+        if len(bugs):
+            for i in bugs:
+                predicted_results[fp].append(i)
+        else:
+            predicted_results[fp] = []
+            
     return dict(predicted_results)
