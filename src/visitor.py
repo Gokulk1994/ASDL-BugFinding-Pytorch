@@ -82,7 +82,7 @@ class Identifier(Node):
 
 class Literal(Node):
     @property
-    def fields(self): return ['value', 'regex']
+    def fields(self): return ['value', 'regex','raw']
 
 
 class Program(Node):

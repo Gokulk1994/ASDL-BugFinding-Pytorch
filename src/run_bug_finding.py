@@ -56,12 +56,10 @@ def find_bugs_in_js_files(list_of_json_file_paths: List[str], token_embedding: f
     #                                                   #
     #####################################################
 
-    # For each file, the current naive implementation returns a random line number between 1-500
-    # Replace this with your own code
     predicted_results = defaultdict(list)
 
     for fp in list_of_json_file_paths:
-        bug_list = find_bugs(fp)
+        bug_list = find_bugs(fp, token_embedding)
         
         if len(bug_list):
             for i in bug_list:

@@ -1,17 +1,11 @@
-from MemberExpression import *
-import numpy as np
-
+import TypeChecker
 
 def gen_unary_exp_token(assign_tree):
     op = [assign_tree.operator]
     x_pos = []
     x_neg = []
-    
-    if assign_tree.argument.type == "Identifier":
-        arg = [assign_tree.argument.name]
-    else:
-        arg = [assign_tree.argument.type]
 
+    arg, _ = TypeChecker.check_type_get_token(assign_tree.argument)
 
     x_pos = x_pos + op
     x_pos = x_pos + arg

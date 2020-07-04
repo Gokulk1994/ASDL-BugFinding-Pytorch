@@ -1,19 +1,12 @@
-from MemberExpression import *
+import TypeChecker
 
 def gen_assign_exp_token(assign_tree):
     op = assign_tree.operator
     x_pos = []
     x_neg = []
 
-    if assign_tree.left.type == "Identifier" or node.test.type == "Literal":
-        left = [assign_tree.left.name]
-    else:
-        left = [assign_tree.left.type]
-
-    if assign_tree.right.type == "Identifier":
-        right = [assign_tree.right.name]
-    else:
-        right = [assign_tree.right.type]
+    left, _  = TypeChecker.check_type_get_token(assign_tree.left)
+    right, _ = TypeChecker.check_type_get_token(assign_tree.right)
 
     x_pos = x_pos + left
     x_pos = x_pos + [op]

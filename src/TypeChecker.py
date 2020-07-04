@@ -1,7 +1,6 @@
-
-from AssignmentExpression import *
-from UnaryExpression import *
-
+import AssignmentExpression
+import UnaryExpression
+import BinaryExpression
 
 
 def check_type_get_token(test_tree):
@@ -11,12 +10,14 @@ def check_type_get_token(test_tree):
     x_pos = [test_type]
     x_neg = None
 
-    if test_type == "Identifier" or test_type == "Literal":
+    if test_type == "Identifier":
         x_pos = [test_tree.name]
+    elif test_type == "Literal":
+        x_pos = [test_tree.value]
     elif test_type == "AssignmentExpression":
-        x_pos, x_neg = gen_assign_exp_token(test_tree)        
+        x_pos, x_neg = AssignmentExpression.gen_assign_exp_token(test_tree)        
     elif test_type == "BinaryExpression":
-        pass
+        x_pos, x_neg = BinaryExpression.gen_binary_exp_token(test_tree)
     elif test_type == "CallExpression":
         pass
     elif test_type == "LogicalExpression":
@@ -28,7 +29,7 @@ def check_type_get_token(test_tree):
     elif test_type == "ThisExpression":
         pass
     elif test_type == "UnaryExpression":
-        x_pos, x_neg = gen_unary_exp_token(test_tree) 
+        x_pos, x_neg = UnaryExpression.gen_unary_exp_token(test_tree) 
     elif test_type == "UpdateExpression":
         pass
     else:

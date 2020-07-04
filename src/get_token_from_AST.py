@@ -23,7 +23,7 @@ def read_json_file(json_file_path: str) -> List:
 
 
 def get_token(file_path):
-    data = read_json_file("10055_7513_a_dynamicContent.json")
+    data = read_json_file(file_path)
     program = visitor.objectify(data["ast"])
     if_nodes = []
     line_list = []
@@ -32,25 +32,26 @@ def get_token(file_path):
     token_label = []
     token_line_num = []
 
-    type_count = Counter()
+    type_list_pos = []
+    type_list_neg = []
 
     for node in program.traverse():
         if node.type == "IfStatement":
-            type_count[node.test.type] += 1
-            
             x_pos, x_neg = check_type_get_token(node.test)
             
             if x_pos != None:
                 token_list.append(x_pos)
                 token_label.append(0)
                 line_list.append(node.loc['start']['line'])
-                test_list.append(node.test.type)
+                type_list_pos.append(node.test.type)
             if x_neg != None:
                 token_list.append(x_neg)
                 token_label.append(1)
                 line_list.append(node.loc['start']['line'])
-                test_list.append(node.test.type)
+                type_list_neg.append(node.test.type)
 
-    assert len(token_list) == len(line_list) == len(token_label) == len(test_list)
-    return token_list, token_label, line_list, test_list
-    
+
+    assert len(token_list) == len(line_list) == len(token_label) 
+
+    return token_list, token_label, line_list, type_list_pos,type_list_neg
+    #return token_list, token_label, line_list
