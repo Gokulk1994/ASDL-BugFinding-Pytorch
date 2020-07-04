@@ -7,39 +7,19 @@ import fasttext
 from collections import defaultdict
 import json
 import codecs
+from bug_finder import find_bugs
 
-
-def read_json_file(json_file_path: str) -> List:
-    """ Read a JSON file given path """
-    try:
-        obj_text = codecs.open(json_file_path, 'r',
-                               encoding='utf-8').read()
-        return json.loads(obj_text)
-    except FileNotFoundError:
-        print(
-            "File {} not found. Please provide a correct file path Eg. ./results/hello.json".format(json_file_path))
-        return []
-    except Exception as e:
-        # Most likely malformed JSON file
-        return []
 
 def all_if_as_bugs(json_file):
 
-    with open(json_file,'r') as fp:
-        data = json.load(fp)
-        
+    data = read_json_file(json_file)
     raw_code = data['raw_source_code']
     split_rawcode = raw_code.split("\n")
-    #ifcases = []
     ifcase_linenumber = []
-    wanted = ['if', '(']
-    unwanted = ['//', '/*']
-
+    print(json_file)
     for i,line in enumerate(split_rawcode):
-        if (('if (' in line)or('if(' in line)) and ('//' not in line):
-            #ifcases.append(line)
+        if ('if (' in line) or ('if(' in line):
             ifcase_linenumber.append(i+1)
-
     return ifcase_linenumber
     
 def find_bugs_in_js_files(list_of_json_file_paths: List[str], token_embedding: fasttext.FastText) -> Dict[str, List[int]]:
@@ -79,12 +59,12 @@ def find_bugs_in_js_files(list_of_json_file_paths: List[str], token_embedding: f
     # For each file, the current naive implementation returns a random line number between 1-500
     # Replace this with your own code
     predicted_results = defaultdict(list)
-    
+
     for fp in list_of_json_file_paths:
-        bugs = all_if_as_bugs(fp)
+        bug_list = find_bugs(fp)
         
-        if len(bugs):
-            for i in bugs:
+        if len(bug_list):
+            for i in bug_list:
                 predicted_results[fp].append(i)
         else:
             predicted_results[fp] = []
