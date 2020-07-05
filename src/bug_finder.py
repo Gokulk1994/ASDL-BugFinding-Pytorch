@@ -17,7 +17,7 @@ globaltype_count = Counter()
 
 def write_json_file(data, file_path):
     try:
-        # print("Writing JSON file "+file_path)
+        #print("Writing JSON file "+file_path)
         json.dump(data, codecs.open(file_path, 'w', encoding='utf-8'),
                   separators=(',', ':'))
     except Exception as e:
@@ -65,23 +65,24 @@ def find_bugs_in_js_files(list_of_json_file_paths: List[str], token_embedding: f
         for j in type_list_neg:
             globaltype_neg[j] += 1
 
-        if filecount == 2:
+        if filecount == 500:
             print("500 files written")
             
             
-            with open("token.txt", 'a') as fp:
+            with open("token.txt", 'a', encoding="utf-8") as fp:
                 for i in all_token_list:
                     fp.writelines(["%s\n" % item  for item in i])
-            with open("token_label.txt", 'a') as fp:
+            with open("token_label.txt", 'a', encoding="utf-8") as fp:
                 for i in all_token_label:
                     fp.writelines(["%s\n" % item  for item in i])
-            with open("line_list.txt", 'a') as fp:
+            with open("line_list.txt", 'a', encoding="utf-8") as fp:
                 for i in all_line_list:
                     fp.writelines(["%s\n" % item  for item in i])
             all_token_list  = []
             all_token_label = []
             all_line_list   = []
             filecount = 0
+            
     write_json_file(globaltype_pos,"global_pos.json")
     write_json_file(globaltype_neg,"global_neg.json")
     return []
@@ -114,7 +115,7 @@ def evaluation(input_dir: str, out_file: str) -> None:
 
 
 def run():
-    input_dir = '../dataset/test/'
+    input_dir = '../dataset/json_files/'
     output_dir = '.'
     out_file = os.path.join(output_dir, 'answer.json')
     evaluation(input_dir=input_dir,

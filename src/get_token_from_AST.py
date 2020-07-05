@@ -23,8 +23,6 @@ def read_json_file(json_file_path: str) -> List:
 
 
 def get_token(file_path):
-    data = read_json_file(file_path)
-    program = visitor.objectify(data["ast"])
     if_nodes = []
     line_list = []
     test_list = []
@@ -34,24 +32,37 @@ def get_token(file_path):
 
     type_list_pos = []
     type_list_neg = []
+    data = read_json_file(file_path)
+    try:
+        program = visitor.objectify(data["ast"])
+        for node in program.traverse():
+            if node.type == "IfStatement":
 
-    for node in program.traverse():
-        if node.type == "IfStatement":
-            x_pos, x_neg = check_type_get_token(node.test)
+                x_pos, x_neg = check_type_get_token(node.test)
+                
+                if x_pos != None:
+                    token_list.append(x_pos)
+                    token_label.append(0)
+                    line_list.append(node.loc['start']['line'])
+                    type_list_pos.append(node.test.type)
+                    
+                if x_neg != None:
+                    token_list.append(x_neg)
+                    token_label.append(1)
+                    line_list.append(node.loc['start']['line'])
+                    type_list_neg.append(node.test.type)
+
+        if (len(token_list) != len(line_list)) || (len(token_list) != len(token_label)):
+            print("Assert Error : len mismatch error")
             
-            if x_pos != None:
-                token_list.append(x_pos)
-                token_label.append(0)
-                line_list.append(node.loc['start']['line'])
-                type_list_pos.append(node.test.type)
-            if x_neg != None:
-                token_list.append(x_neg)
-                token_label.append(1)
-                line_list.append(node.loc['start']['line'])
-                type_list_neg.append(node.test.type)
+
+        return token_list, token_label, line_list, type_list_pos,type_list_neg
+    except:
+        print("ERROR : ", file_path)
+        return token_list, token_label, line_list, type_list_pos,type_list_neg
+    
 
 
-    assert len(token_list) == len(line_list) == len(token_label) 
 
-    return token_list, token_label, line_list, type_list_pos,type_list_neg
+    
     #return token_list, token_label, line_list
