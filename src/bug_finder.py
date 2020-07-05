@@ -25,9 +25,9 @@ def write_json_file(data, file_path):
 
 
 def find_bugs(file_path:str, token_embedding: fasttext.FastText):
-    print(file_path)
+    #print(file_path)
     token_list, token_label, line_list, type_list_pos,type_list_neg = get_token_from_AST.get_token(file_path)
-    print(len(line_list))
+    #print(len(line_list))
     """
     for i,token in enumerate(token_list):
         print(line_list[i])
@@ -64,7 +64,7 @@ def find_bugs_in_js_files(list_of_json_file_paths: List[str], token_embedding: f
             globaltype_pos[i] += 1
         for j in type_list_neg:
             globaltype_neg[j] += 1
-
+        """
         if filecount == 500:
             print("500 files written")
             
@@ -82,7 +82,7 @@ def find_bugs_in_js_files(list_of_json_file_paths: List[str], token_embedding: f
             all_token_label = []
             all_line_list   = []
             filecount = 0
-            
+        """
     write_json_file(globaltype_pos,"global_pos.json")
     write_json_file(globaltype_neg,"global_neg.json")
     return []
@@ -115,7 +115,7 @@ def evaluation(input_dir: str, out_file: str) -> None:
 
 
 def run():
-    input_dir = '../dataset/json_files/'
+    input_dir = '../dataset/test/'
     output_dir = '.'
     out_file = os.path.join(output_dir, 'answer.json')
     evaluation(input_dir=input_dir,

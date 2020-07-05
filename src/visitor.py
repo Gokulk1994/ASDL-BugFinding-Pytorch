@@ -8,7 +8,6 @@ class UnknownNodeTypeError(Exception):
     """Raised if we encounter a node with an unknown type."""
     pass
 
-
 class Node(abc.ABC):
     """Abstract Node class which defines node operations"""
     @abc.abstractproperty
@@ -55,6 +54,8 @@ def objectify(data: Union[None, Dict[str, Any], List[Dict[str, Any]]]) -> Union[
     """Recursively transform AST data into a Node object."""
     if not isinstance(data, (dict, list)):
         # Data is a basic type (None, string, number)
+        if data == None:
+            print(type(data),data)
         return data
 
     if isinstance(data, dict):
@@ -63,6 +64,9 @@ def objectify(data: Union[None, Dict[str, Any], List[Dict[str, Any]]]) -> Union[
             return data
         # Transform the type into the appropriate class.
         node_class = globals().get(data['type'])
+
+        if not node_class:
+            print(data['type'])
         if not node_class:
             raise UnknownNodeTypeError(data['type'])
         return node_class(data)
@@ -74,6 +78,38 @@ def objectify(data: Union[None, Dict[str, Any], List[Dict[str, Any]]]) -> Union[
 # --- AST spec: https://github.com/estree/estree/blob/master/es5.md ---
 # pylint: disable=missing-docstring,multiple-statements
 
+
+#Missing
+
+class RestElement(Node):
+    @property
+    def fields(self): return ['argument']
+
+class ArrowFunctionExpression(Node):
+    @property
+    def fields(self): return ['value', 'id', 'params', 'body', 'generator', 'async', 'expression']
+
+class TemplateLiteral(Node):
+    @property
+    def fields(self): return ['quasis', 'expression']
+    
+class YieldExpression(Node):
+    @property
+    def fields(self): return ['argument', 'delegate']
+
+class TemplateElement(Node):
+    @property
+    def fields(self): return ['value', 'tail']
+
+class ClassDeclaration(Node):
+    @property
+    def fields(self): return ['id', 'superClass', 'body']
+
+class SpreadElement(Node):
+    @property
+    def fields(self): return ['argument']
+    
+#==========================================================
 
 class Identifier(Node):
     @property
@@ -199,6 +235,9 @@ class ForInStatement(Node):
     @property
     def fields(self): return ['left', 'right', 'body']
 
+class ForOfStatement(Node):
+    @property
+    def fields(self): return ['left', 'right', 'body']
 
 # ========== Declarations ==========
 
@@ -231,11 +270,17 @@ class ArrayExpression(Node):
     @property
     def fields(self): return ['elements']
 
+class ArrayPattern(Node):
+    @property
+    def fields(self): return ['elements']
 
 class ObjectExpression(Node):
     @property
     def fields(self): return ['properties']
 
+class ObjectPattern(Node):
+    @property
+    def fields(self): return ['properties']
 
 class Property(Node):
     @property

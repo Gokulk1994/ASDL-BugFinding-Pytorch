@@ -35,34 +35,35 @@ def get_token(file_path):
     data = read_json_file(file_path)
     try:
         program = visitor.objectify(data["ast"])
-        for node in program.traverse():
-            if node.type == "IfStatement":
-
-                x_pos, x_neg = check_type_get_token(node.test)
-                
-                if x_pos != None:
-                    token_list.append(x_pos)
-                    token_label.append(0)
-                    line_list.append(node.loc['start']['line'])
-                    type_list_pos.append(node.test.type)
-                    
-                if x_neg != None:
-                    token_list.append(x_neg)
-                    token_label.append(1)
-                    line_list.append(node.loc['start']['line'])
-                    type_list_neg.append(node.test.type)
-
-        if (len(token_list) != len(line_list)) || (len(token_list) != len(token_label)):
-            print("Assert Error : len mismatch error")
-            
-
-        return token_list, token_label, line_list, type_list_pos,type_list_neg
     except:
         print("ERROR : ", file_path)
         return token_list, token_label, line_list, type_list_pos,type_list_neg
+
+    for node in program.traverse():
+        if node.type == "IfStatement":
+            x_pos, x_neg = check_type_get_token(node.test)
+            
+            if x_pos != None:
+                token_list.append(x_pos)
+                token_label.append(0)
+                line_list.append(node.loc['start']['line'])
+                type_list_pos.append(node.test.type)
+                
+            if x_neg != None:
+                token_list.append(x_neg)
+                token_label.append(1)
+                line_list.append(node.loc['start']['line'])
+                type_list_neg.append(node.test.type)
+
+    assert len(token_list) == len(line_list) == len(token_label)
+    """
+    if (len(token_list) != len(line_list)) or (len(token_list) != len(token_label)):
+        print("Assert Error : len mismatch error")
+        return [],[],[],[],[]
+    """    
+    print("---------------------")
+    return token_list, token_label, line_list, type_list_pos,type_list_neg
     
-
-
-
+    
     
     #return token_list, token_label, line_list
