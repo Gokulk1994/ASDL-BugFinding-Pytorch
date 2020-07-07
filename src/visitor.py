@@ -8,6 +8,7 @@ class UnknownNodeTypeError(Exception):
     """Raised if we encounter a node with an unknown type."""
     pass
 
+
 class Node(abc.ABC):
     """Abstract Node class which defines node operations"""
     @abc.abstractproperty
@@ -18,6 +19,10 @@ class Node(abc.ABC):
         """Sets one attribute in the Node for each field (e.g. self.body)."""
         for field in self.fields:
             setattr(self, field, objectify(data.get(field)))
+
+        #self.range = data.get('range')
+        self.loc = data.get('loc')
+        #self.tokens = data.get('tokens')
 
     def dict(self) -> Dict[str, Any]:
         """Transform the Node back into an Esprima-compatible AST dictionary."""
@@ -30,6 +35,10 @@ class Node(abc.ABC):
                 result[field] = [x.dict() for x in val]
             else:
                 result[field] = val
+        if self.range is not None:
+            result['range'] = self.range
+        if self.loc is not None:
+            result['loc'] = self.loc
         return result
 
     def traverse(self) -> Generator['Node', None, None]:
@@ -54,8 +63,6 @@ def objectify(data: Union[None, Dict[str, Any], List[Dict[str, Any]]]) -> Union[
     """Recursively transform AST data into a Node object."""
     if not isinstance(data, (dict, list)):
         # Data is a basic type (None, string, number)
-        if data == None:
-            print(type(data),data)
         return data
 
     if isinstance(data, dict):
@@ -67,6 +74,7 @@ def objectify(data: Union[None, Dict[str, Any], List[Dict[str, Any]]]) -> Union[
 
         if not node_class:
             print(data['type'])
+        
         if not node_class:
             raise UnknownNodeTypeError(data['type'])
         return node_class(data)
@@ -75,41 +83,11 @@ def objectify(data: Union[None, Dict[str, Any], List[Dict[str, Any]]]) -> Union[
         return [objectify(x) for x in data]
 
 
-# --- AST spec: https://github.com/estree/estree/blob/master/es5.md ---
+# --- AST spec: https://github.com/estree/estree/blob/master/es5.md
+#               https://github.com/estree/estree/blob/master/es2015.md
+#               https://github.com/estree/estree/blob/master/es2016.md    ---
 # pylint: disable=missing-docstring,multiple-statements
 
-
-#Missing
-
-class RestElement(Node):
-    @property
-    def fields(self): return ['argument']
-
-class ArrowFunctionExpression(Node):
-    @property
-    def fields(self): return ['value', 'id', 'params', 'body', 'generator', 'async', 'expression']
-
-class TemplateLiteral(Node):
-    @property
-    def fields(self): return ['quasis', 'expression']
-    
-class YieldExpression(Node):
-    @property
-    def fields(self): return ['argument', 'delegate']
-
-class TemplateElement(Node):
-    @property
-    def fields(self): return ['value', 'tail']
-
-class ClassDeclaration(Node):
-    @property
-    def fields(self): return ['id', 'superClass', 'body']
-
-class SpreadElement(Node):
-    @property
-    def fields(self): return ['argument']
-    
-#==========================================================
 
 class Identifier(Node):
     @property
@@ -119,11 +97,16 @@ class Identifier(Node):
 class Literal(Node):
     @property
     def fields(self): return ['value', 'regex','raw']
+    
+    
+class BigIntLiteral(Node):
+    @property
+    def fields(self): return ['value', 'bigint']
 
 
 class Program(Node):
     @property
-    def fields(self): return ['body']
+    def fields(self): return ['body', 'sourceType']
 
 
 # ========== Statements ==========
@@ -182,7 +165,7 @@ class ContinueStatement(Node):
 
 class IfStatement(Node):
     @property
-    def fields(self): return ['test', 'consequent', 'alternate','loc']
+    def fields(self): return ['test', 'consequent', 'alternate', 'loc']
 
 
 class SwitchStatement(Node):
@@ -235,21 +218,23 @@ class ForInStatement(Node):
     @property
     def fields(self): return ['left', 'right', 'body']
 
+
 class ForOfStatement(Node):
     @property
-    def fields(self): return ['left', 'right', 'body']
+    def fields(self): return ['left', 'right', 'body', 'await']
+
 
 # ========== Declarations ==========
 
 
 class FunctionDeclaration(Node):
     @property
-    def fields(self): return ['id', 'params', 'body']
+    def fields(self): return ['id', 'params', 'body', 'async', 'generator']
 
 
 class VariableDeclaration(Node):
     @property
-    def fields(self): return ['declarations']
+    def fields(self): return ['declarations', 'kind']
 
 
 class VariableDeclarator(Node):
@@ -268,28 +253,22 @@ class ThisExpression(Node):
 
 class ArrayExpression(Node):
     @property
-    def fields(self): return ['elements']
+    def fields(self): return []
 
-class ArrayPattern(Node):
-    @property
-    def fields(self): return ['elements']
 
 class ObjectExpression(Node):
     @property
     def fields(self): return ['properties']
 
-class ObjectPattern(Node):
-    @property
-    def fields(self): return ['properties']
 
 class Property(Node):
     @property
-    def fields(self): return ['key', 'value', 'kind']
+    def fields(self): return ['key', 'value', 'kind', 'method', 'shorthand', 'computed']
 
 
 class FunctionExpression(Node):
     @property
-    def fields(self): return ['id', 'params', 'body']
+    def fields(self): return ['id', 'params', 'body', 'generator', 'async']
 
 
 class UnaryExpression(Node):
@@ -340,3 +319,183 @@ class NewExpression(Node):
 class SequenceExpression(Node):
     @property
     def fields(self): return ['expressions']
+
+
+class Super(Node):
+    @property
+    def fields(self): return []
+
+
+class SpreadElement(Node):
+    @property
+    def fields(self): return ['argument']
+
+
+class ArrowFunctionExpression(Node):
+    @property
+    def fields(self): return ['id', 'params', 'body', 'expression', 'generator', 'async']
+    
+
+class YieldExpression(Node):
+    @property
+    def fields(self): return ['argument', 'delegate']
+
+
+class AwaitExpression(Node):
+    @property
+    def fields(self): return ['argument']
+    
+    
+class ImportExpression(Node):
+    @property
+    def fields(self): return ['source']
+
+
+# ========== Functions ==========
+
+
+class Function(Node):
+    @property
+    def fields(self): return ['id', 'params', 'body', 'generator', 'async']
+
+
+# ========== Template Literals ==========
+
+
+class TemplateLiteral(Node):
+    @property
+    def fields(self): return ['quasis', 'expressions']
+
+
+class TaggedTemplateExpression(Node):
+    @property
+    def fields(self): return ['tag', 'quasi']
+    
+
+class TemplateElement(Node):
+    @property
+    def fields(self): return ['tail', 'value']
+
+
+# ========== Patterns ==========
+
+
+class AssignmentProperty(Node):
+    @property
+    def fields(self): return ['key', 'value', 'kind', 'method', 'shorthand', 'computed']
+
+
+class ObjectPattern(Node):
+    @property
+    def fields(self): return ['properties']
+
+
+class ArrayPattern(Node):
+    @property
+    def fields(self): return ['elements']
+
+
+class RestElement(Node):
+    @property
+    def fields(self): return ['argument']
+
+
+class AssignmentPattern(Node):
+    @property
+    def fields(self): return ['left', 'right']
+
+
+# ========== Classes ==========
+
+class Class(Node):
+    @property
+    def fields(self): return ['id', 'superclass', 'body']
+
+
+class ClassBody(Node):
+    @property
+    def fields(self): return ['body']
+
+
+class MethodDefinition(Node):
+    @property
+    def fields(self): return ['key', 'value', 'kind', 'computed', 'static']
+
+
+class ClassDeclaration(Node):
+    @property
+    def fields(self): return ['id']
+
+
+class ClassExpression(Node):
+    @property
+    def fields(self): return []
+
+
+class MetaProperty(Node):
+    @property
+    def fields(self): return ['meta', 'property']
+
+
+# ========== Modules ==========
+
+
+class ModuleDeclaration(Node):
+    @property
+    def fields(self): return []
+
+
+class ModuleSpecifier(Node):
+    @property
+    def fields(self): return ['local']
+
+
+class ImportDeclaration(Node):
+    @property
+    def fields(self): return ['specifiers', 'source']
+
+
+class ImportSpecifier(Node):
+    @property
+    def fields(self): return ['local', 'imported']
+
+
+class ImportDefaultSpecifier(Node):
+    @property
+    def fields(self): return ['local']
+
+
+class ImportNamespaceSpecifier(Node):
+    @property
+    def fields(self): return ['local']
+
+
+class ExportNamedDeclaration(Node):
+    @property
+    def fields(self): return ['declaration', 'specifiers', 'source']
+
+
+class ExportSpecifier(Node):
+    @property
+    def fields(self): return ['local', 'exported']
+
+
+class AnonymousDefaultExportedFunctionDeclaration(Node):
+    @property
+    def fields(self): return ['id', 'params', 'body', 'generator', 'async']
+
+
+class AnonymousDefaultExportedClassDeclaration(Node):
+    @property
+    def fields(self): return ['id', 'superclass', 'body']
+
+
+class ExportDefaultDeclaration(Node):
+    @property
+    def fields(self): return ['declaration']
+
+
+class ExportAllDeclaration(Node):
+    @property
+    def fields(self): return ['source']
+

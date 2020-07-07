@@ -22,6 +22,7 @@ import sys
 import os
 import os.path
 import fasttext
+from model import BugFinderModel
 
 
 def write_json_file(data: Dict, file_path: str) -> None:

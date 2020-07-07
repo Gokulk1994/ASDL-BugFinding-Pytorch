@@ -41,7 +41,7 @@ def find_bugs(file_path:str, token_embedding: fasttext.FastText):
 
     return token_list, token_label, line_list, type_list_pos,type_list_neg
 
-
+"""
 def get_fasttext_embedding(token_list,token_embedding: fasttext.FastText):
     pass
     
@@ -64,29 +64,30 @@ def find_bugs_in_js_files(list_of_json_file_paths: List[str], token_embedding: f
             globaltype_pos[i] += 1
         for j in type_list_neg:
             globaltype_neg[j] += 1
-        """
+
         if filecount == 500:
             print("500 files written")
             
             
             with open("token.txt", 'a', encoding="utf-8") as fp:
                 for i in all_token_list:
-                    fp.writelines(["%s\n" % item  for item in i])
+                    fp.writelines("%s\n" % item  for item in i)                        
             with open("token_label.txt", 'a', encoding="utf-8") as fp:
                 for i in all_token_label:
-                    fp.writelines(["%s\n" % item  for item in i])
+                    fp.writelines("%s\n" % item  for item in i)
             with open("line_list.txt", 'a', encoding="utf-8") as fp:
                 for i in all_line_list:
-                    fp.writelines(["%s\n" % item  for item in i])
+                    fp.writelines("%s\n" % item  for item in i)
+                    
             all_token_list  = []
             all_token_label = []
             all_line_list   = []
             filecount = 0
-        """
+
     write_json_file(globaltype_pos,"global_pos.json")
     write_json_file(globaltype_neg,"global_neg.json")
     return []
-        
+      
 def evaluation(input_dir: str, out_file: str) -> None:
     if not input_dir and not out_file:
         write_json_file(data={}, file_path=out_file)
@@ -115,7 +116,7 @@ def evaluation(input_dir: str, out_file: str) -> None:
 
 
 def run():
-    input_dir = '../dataset/test/'
+    input_dir = '../dataset/json_files/'
     output_dir = '.'
     out_file = os.path.join(output_dir, 'answer.json')
     evaluation(input_dir=input_dir,
@@ -123,3 +124,4 @@ def run():
     
 if __name__ == '__main__':
     run()
+"""

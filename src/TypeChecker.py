@@ -13,7 +13,7 @@ def check_type_get_token(test_tree):
     if test_type == "Identifier":
         x_pos = [test_tree.name]
     elif test_type == "Literal":
-        x_pos = [test_tree.value]
+        x_pos = [test_tree.raw]
     elif test_type == "AssignmentExpression":
         x_pos, x_neg = AssignmentExpression.gen_assign_exp_token(test_tree)        
     elif test_type == "BinaryExpression":
