@@ -11,6 +11,7 @@ def gen_assign_exp_token(assign_tree):
     x_pos = x_pos + left
     x_pos = x_pos + [op]
     x_pos = x_pos + right
+
     
     x_neg = [x_pos[2], x_pos[1], x_pos[0]]
 
