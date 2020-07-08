@@ -1,6 +1,6 @@
 import TypeChecker
 
-def gen_assign_exp_token(assign_tree):
+def gen_assign_exp_token(assign_tree,call_from_main):
     op = assign_tree.operator
     x_pos = []
     x_neg = []
@@ -11,9 +11,8 @@ def gen_assign_exp_token(assign_tree):
     x_pos = x_pos + left
     x_pos = x_pos + [op]
     x_pos = x_pos + right
-
     
-    x_neg = [x_pos[2], x_pos[1], x_pos[0]]
+    #x_neg = [x_pos[2], x_pos[1], x_pos[0]]
 
     return x_pos, x_neg
        

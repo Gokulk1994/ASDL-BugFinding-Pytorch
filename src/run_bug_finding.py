@@ -104,43 +104,52 @@ def find_bugs_in_js_files(list_of_json_file_paths: List[str], token_embedding: f
     #                                                   #
     #####################################################
     #count = 0
-    predicted_results = defaultdict(list)
-    frozen_model = model.load_model()
-    frozen_model.eval()
-    
-    for fp in list_of_json_file_paths:
-        token_list, token_label, line_list,__,_ = find_bugs(fp, token_embedding)
-        bug_list = []
-        fasttext_token = []
 
-        if len(token_list):
-            for line in token_list:
-              linetoken = []
-              for token in line:
-                linetoken.append(token_embedding[token])
-              fasttext_token.append(torch.tensor(linetoken))
+    train = False
 
-            padded = pad_sequence(fasttext_token, batch_first=True)
-            #packed = pack_padded_sequence(padded,lengths=torch.tensor(35), batch_first=True, enforce_sorted=False)
-            pred_y = frozen_model(padded)
-            pred_tensor = torch.squeeze(pred_y,dim=1)
-            
-            for i, y in enumerate(pred_tensor):
-                if y > 0.65:
-                    #print("bug ",y, token_list[i])
-                    bug_list.append(line_list[i])
-                #else:
-                    #print("no bug", y, token_list[i])
-        else:
-            bug_list = []
+    if train:
+        model.train_model(list_of_json_file_paths, token_embedding)
+        return None
+    else:
+        predicted_results = defaultdict(list)
+        frozen_model = model.load_model()
+        frozen_model.eval()
         
-        #count += len(bug_list)
-    
-        if len(bug_list):
-            for i in bug_list:
-                predicted_results[fp].append(i)
-        else:
-            predicted_results[fp] = []
+        for fp in list_of_json_file_paths:
+            token_list, token_label, line_list,__,_ = find_bugs(fp, token_embedding)
+            bug_list = []
+            fasttext_token = []
+
+            if len(token_list):
+                for line in token_list:
+                    linetoken = []
+                    for token in line:
+                        linetoken.append(token_embedding[token])
+                    fasttext_token.append(torch.tensor(linetoken))
+
+                padded = pad_sequence(fasttext_token, batch_first=True)
+                #packed = pack_padded_sequence(padded,lengths=torch.tensor(35), batch_first=True, enforce_sorted=False)
+                pred_y = frozen_model(padded)
+                pred_tensor = torch.squeeze(pred_y,dim=1)
+
+                tensor_bug_label = torch.tensor(token_label)
+                
+                for i, y in enumerate(pred_tensor):
+                    if y > 0.75:
+                        #print("bug ",y, token_list[i])
+                        bug_list.append(line_list[i])
+                    #else:
+                        #print("no bug", y, tensor_bug_label[i], token_list[i])
+            else:
+                bug_list = []
             
-    #print("count : ",count)    
-    return dict(predicted_results)
+            #count += len(bug_list)
+        
+            if len(bug_list):
+                for i in bug_list:
+                    predicted_results[fp].append(i)
+            else:
+                predicted_results[fp] = []
+                
+        #print("count : ",count)    
+        return dict(predicted_results)

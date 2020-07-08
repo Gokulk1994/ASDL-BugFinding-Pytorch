@@ -24,9 +24,9 @@ def write_json_file(data, file_path):
         print(f"Could not write to {file_path} because {e}")
 
 
-def find_bugs(file_path:str, token_embedding: fasttext.FastText):
+def find_bugs(file_path:str, token_embedding: fasttext.FastText, get_negative = False):
     #print(file_path)
-    token_list, token_label, line_list, type_list_pos,type_list_neg = get_token_from_AST.get_token(file_path)
+    token_list, token_label, line_list, type_list_pos,type_list_neg = get_token_from_AST.get_token(file_path, get_negative)
     #print(len(line_list))
     """
     for i,token in enumerate(token_list):

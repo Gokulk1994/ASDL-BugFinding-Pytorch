@@ -58,21 +58,22 @@ def get_token(file_path, Get_Negative = False):
     try:
         for node in program.traverse():
             if node.type == "IfStatement":
-                x_pos, x_neg = check_type_get_token(node.test)
+                x_pos, x_neg = check_type_get_token(node.test, True)
                 
-                if x_pos != None:
+                if x_pos != None and len(x_pos):
                     token_list.append(x_pos)
                     token_label.append(0)
                     line_list.append(node.loc['start']['line'])
                     type_list_pos.append(node.test.type)
                     
-                if Get_Negative == True and x_neg != None:
+                if Get_Negative == True and x_neg!= None and len(x_neg):
                     token_list.append(x_neg)
                     token_label.append(1)
                     line_list.append(node.loc['start']['line'])
                     type_list_neg.append(node.test.type)
 
         assert len(token_list) == len(line_list) == len(token_label)
+
         """
         if (len(token_list) != len(line_list)) or (len(token_list) != len(token_label)):
             print("Assert Error : len mismatch error")
