@@ -53,6 +53,16 @@ NUM_EPOCHS = 10
 BATCH_SIZE = 128
 
 
+def all_if_as_bugs(json_file):
+    data = get_token_from_AST.read_json_file(json_file)
+    raw_code = data['raw_source_code']
+    split_rawcode = raw_code.split("\n")
+    ifcase_linenumber = []
+    for i,line in enumerate(split_rawcode):
+        if ('if (' in line) or ('if(' in line):
+            ifcase_linenumber.append(i+1)
+    return len(ifcase_linenumber)
+
 def load_model():
   cur_dir_path = os.path.dirname(os.path.realpath(__file__))
   saved_model_path = os.path.join(cur_dir_path, "trained_model.pt")
@@ -69,12 +79,14 @@ def save_token(list_of_json_file_paths, token_embedding):
 
   for fp in list_of_json_file_paths:
     token_list, token_label, line_list,__,_ = get_token_from_AST.get_token(fp, True)
+    print(fp, all_if_as_bugs(fp))
     
     if len(token_list):
       for lab in token_label:
         label_list.append(lab)
       
       for line in token_list:
+        #print(line)
         linetoken = []
         for token in line:
           linetoken.append(token_embedding[token])
@@ -83,7 +95,9 @@ def save_token(list_of_json_file_paths, token_embedding):
           fasttext_token.append(torch.tensor(linetoken))
         else:
           print("issue list : ", line)
-  
+     
+    print("---------------------------------------------------------")
+
   assert len(fasttext_token) == len(label_list)
 
   print(len(fasttext_token),len(label_list))
@@ -164,7 +178,7 @@ def train_model(list_of_json_file_paths: List[str], token_embedding: fasttext.Fa
     label         = torch.load('label.pt')
 
   print("Padded size", input_feature.shape, label.shape, torch.sum(label))
-
+  return 
   X_train, X_valid, y_train, y_valid = train_test_split(input_feature.numpy(), label.numpy(), test_size=0.2)
   train_ds = CreateDataSet(X_train, y_train)
   valid_ds = CreateDataSet(X_valid, y_valid)

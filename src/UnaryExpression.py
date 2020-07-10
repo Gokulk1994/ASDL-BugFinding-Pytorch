@@ -13,6 +13,5 @@ def gen_unary_exp_token(assign_tree,call_from_main):
     # negated condition
     if call_from_main and op == "!":
         x_neg += arg
-
     return x_pos, x_neg
        

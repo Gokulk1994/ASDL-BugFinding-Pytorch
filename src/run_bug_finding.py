@@ -105,7 +105,7 @@ def find_bugs_in_js_files(list_of_json_file_paths: List[str], token_embedding: f
     #####################################################
     #count = 0
 
-    train = False
+    train = True
 
     if train:
         model.train_model(list_of_json_file_paths, token_embedding)

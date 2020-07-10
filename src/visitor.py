@@ -20,9 +20,9 @@ class Node(abc.ABC):
         for field in self.fields:
             setattr(self, field, objectify(data.get(field)))
 
-        #self.range = data.get('range')
+        self.range = data.get('range')
         self.loc = data.get('loc')
-        #self.tokens = data.get('tokens')
+        self.tokens = data.get('tokens')
 
     def dict(self) -> Dict[str, Any]:
         """Transform the Node back into an Esprima-compatible AST dictionary."""
