@@ -50,18 +50,21 @@ class BugFinderModel(nn.Module):
     return prediction
      
 NUM_EPOCHS = 10
-BATCH_SIZE = 128
+BATCH_SIZE = 32
 
 
 def all_if_as_bugs(json_file):
     data = get_token_from_AST.read_json_file(json_file)
-    raw_code = data['raw_source_code']
-    split_rawcode = raw_code.split("\n")
-    ifcase_linenumber = []
-    for i,line in enumerate(split_rawcode):
-        if ('if (' in line) or ('if(' in line):
-            ifcase_linenumber.append(i+1)
-    return len(ifcase_linenumber)
+    if data != []:
+      raw_code = data['raw_source_code']
+      split_rawcode = raw_code.split("\n")
+      ifcase_linenumber = []
+      for i,line in enumerate(split_rawcode):
+          if (('if (' in line) or ('if(' in line)) and '//' not in line and '/**' not in line and line[0] != '*' and '/*' not in line and '*' not in line:
+              ifcase_linenumber.append(i+1)
+      return len(ifcase_linenumber), ifcase_linenumber
+    else:
+      return -1, []
 
 def load_model():
   cur_dir_path = os.path.dirname(os.path.realpath(__file__))
@@ -74,13 +77,22 @@ def save_token(list_of_json_file_paths, token_embedding):
   fasttext_token = []
   label_list = []
   line  = []
-  tc = 0
-  tl = 0
 
+  print("file count : ",len(list_of_json_file_paths))
   for fp in list_of_json_file_paths:
-    token_list, token_label, line_list,__,_ = get_token_from_AST.get_token(fp, True)
-    print(fp, all_if_as_bugs(fp))
+    token_list, token_label, line_list,pos_list,neg_list = get_token_from_AST.get_token(fp, True)
+    alllines, linenum = all_if_as_bugs(fp)
+
+    #for i,j in zip(token_list, token_label):
+      #print(i,j)
     
+    #if alllines > len(pos_list):  
+    #print(fp, alllines,",",len(pos_list),",",len(neg_list))
+    #print("------------------------------------------------")
+
+
+    
+ 
     if len(token_list):
       for lab in token_label:
         label_list.append(lab)
@@ -95,17 +107,18 @@ def save_token(list_of_json_file_paths, token_embedding):
           fasttext_token.append(torch.tensor(linetoken))
         else:
           print("issue list : ", line)
-     
-    print("---------------------------------------------------------")
+  
+    #print("---------------------------------------------------------")
 
   assert len(fasttext_token) == len(label_list)
 
   print(len(fasttext_token),len(label_list))
     
-  print("padding started")
-  padded = pad_sequence(fasttext_token, batch_first=True)
-  label  = torch.tensor(label_list)
-  print("padding ended")
+  #print("padding started")
+  if len(fasttext_token):
+    padded = pad_sequence(fasttext_token, batch_first=True)
+    label  = torch.tensor(label_list)
+  #print("padding ended")
   torch.save(padded, 'padded.pt')
   torch.save(label, 'label.pt')
 
@@ -178,7 +191,7 @@ def train_model(list_of_json_file_paths: List[str], token_embedding: fasttext.Fa
     label         = torch.load('label.pt')
 
   print("Padded size", input_feature.shape, label.shape, torch.sum(label))
-  return 
+  #return 
   X_train, X_valid, y_train, y_valid = train_test_split(input_feature.numpy(), label.numpy(), test_size=0.2)
   train_ds = CreateDataSet(X_train, y_train)
   valid_ds = CreateDataSet(X_valid, y_valid)

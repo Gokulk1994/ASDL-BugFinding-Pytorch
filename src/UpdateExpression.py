@@ -9,7 +9,7 @@ def gen_unary_exp_token(update_tree,call_from_main):
 
     arg, _ = TypeChecker.check_type_get_token(update_tree.argument)
 
-    if prefix == "True"
+    if prefix == "True":
         x_pos = x_pos + [op]
         x_pos = x_pos + arg
     else:

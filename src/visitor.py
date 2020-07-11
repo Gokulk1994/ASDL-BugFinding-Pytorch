@@ -20,26 +20,10 @@ class Node(abc.ABC):
         for field in self.fields:
             setattr(self, field, objectify(data.get(field)))
 
-        self.range = data.get('range')
+        #self.range = data.get('range')
         self.loc = data.get('loc')
-        self.tokens = data.get('tokens')
 
-    def dict(self) -> Dict[str, Any]:
-        """Transform the Node back into an Esprima-compatible AST dictionary."""
-        result = OrderedDict({'type': self.type})  # type: Dict[str, Any]
-        for field in self.fields:
-            val = getattr(self, field)
-            if isinstance(val, Node):
-                result[field] = val.dict()
-            elif isinstance(val, list):
-                result[field] = [x.dict() for x in val]
-            else:
-                result[field] = val
-        if self.range is not None:
-            result['range'] = self.range
-        if self.loc is not None:
-            result['loc'] = self.loc
-        return result
+        self.Useful_Fields = []
 
     def traverse(self) -> Generator['Node', None, None]:
         """Pre-order traversal of this node and all of its children."""
@@ -77,7 +61,9 @@ def objectify(data: Union[None, Dict[str, Any], List[Dict[str, Any]]]) -> Union[
         
         if not node_class:
             raise UnknownNodeTypeError(data['type'])
+
         return node_class(data)
+
     else:
         # Data is a list of nodes.
         return [objectify(x) for x in data]
@@ -96,7 +82,7 @@ class Identifier(Node):
 
 class Literal(Node):
     @property
-    def fields(self): return ['value', 'regex','raw']
+    def fields(self): return ['value', 'raw']
     
     
 class BigIntLiteral(Node):
@@ -110,7 +96,6 @@ class Program(Node):
 
 
 # ========== Statements ==========
-
 
 class ExpressionStatement(Node):
     @property
@@ -221,7 +206,7 @@ class ForInStatement(Node):
 
 class ForOfStatement(Node):
     @property
-    def fields(self): return ['left', 'right', 'body', 'await']
+    def fields(self): return ['left', 'right', 'body']
 
 
 # ========== Declarations ==========
@@ -229,7 +214,7 @@ class ForOfStatement(Node):
 
 class FunctionDeclaration(Node):
     @property
-    def fields(self): return ['id', 'params', 'body', 'async', 'generator']
+    def fields(self): return ['id', 'params', 'body', 'async', 'generator','expression']
 
 
 class VariableDeclaration(Node):
@@ -242,7 +227,6 @@ class VariableDeclarator(Node):
     def fields(self): return ['id', 'init']
 
 
-
 # ========== Expressions ==========
 
 
@@ -253,9 +237,8 @@ class ThisExpression(Node):
 
 class ArrayExpression(Node):
     @property
-    def fields(self): return []
-
-
+    def fields(self): return ['elements']
+    
 class ObjectExpression(Node):
     @property
     def fields(self): return ['properties']
@@ -424,12 +407,12 @@ class MethodDefinition(Node):
 
 class ClassDeclaration(Node):
     @property
-    def fields(self): return ['id']
+    def fields(self): return ['id', 'superclass', 'body']
 
 
 class ClassExpression(Node):
     @property
-    def fields(self): return []
+    def fields(self): return ['id', 'superclass', 'body']
 
 
 class MetaProperty(Node):

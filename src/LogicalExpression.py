@@ -13,21 +13,24 @@ def gen_logical_exp_token(logical_tree, call_from_main):
     x_pos = x_pos + [op]
     x_pos = x_pos + right
 
-    
+    cond1_type = ["LogicalExpression", "BinaryExpression"]
+    cond2_type = ["MemberExpression", "CallExpression"]
+
+   
     if op == "&&":
         # Type 1 : Incomplete Conditional Expression
-        if (logical_tree.left.type == "Identifier") and (logical_tree.right.type != "Identifier" or logical_tree.right.type != "Literal"): 
+        if (logical_tree.left.type == "Identifier") and (logical_tree.right.type in cond1_type): 
             x_neg = left
 
         # Type 2 : incorrectly ordered Boolean expression
         else:
-          #if ("Expression" in logical_tree.left.type) and ("Expression" in logical_tree.right.type) :
-          if ("Expression" in logical_tree.right.type) :
+          if logical_tree.right.type in cond2_type :
 
             x_neg = x_neg + right
             x_neg = x_neg + [op]
             x_neg = x_neg + left
 
+    """
     x_neg_list.append(x_neg)
     
     if left_neg != []:
@@ -37,7 +40,8 @@ def gen_logical_exp_token(logical_tree, call_from_main):
     if right_neg != []:
         for j in right_neg:
             x_neg_list.append(j)
- 
+    """
+    
     return x_pos, x_neg
        
         
