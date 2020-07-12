@@ -9,6 +9,21 @@ from torch.utils.data import Dataset, DataLoader
 from sklearn.model_selection import train_test_split
 import numpy as np
 import get_token_from_AST
+from collections import Counter
+
+
+import json
+import codecs
+from typing import List, Dict
+
+def write_json_file(data, file_path):
+    try:
+        #print("Writing JSON file "+file_path)
+        json.dump(data, codecs.open(file_path, 'w', encoding='utf-8'),
+                  separators=(',', ':'))
+    except Exception as e:
+        print(f"Could not write to {file_path} because {e}")
+
 
 class CreateDataSet(Dataset):
   def __init__(self, X, Y):
@@ -78,10 +93,48 @@ def save_token(list_of_json_file_paths, token_embedding):
   label_list = []
   line  = []
 
+  all_token_list  = []
+  all_token_label = []
+  all_line_list   = []
+  globaltype_pos = Counter()
+  globaltype_neg = Counter()
+  filecount = 0
+
   print("file count : ",len(list_of_json_file_paths))
   for fp in list_of_json_file_paths:
-    token_list, token_label, line_list,pos_list,neg_list = get_token_from_AST.get_token(fp, True)
-    alllines, linenum = all_if_as_bugs(fp)
+    filecount += 1
+    token_list, token_label, line_list,type_list_pos,type_list_neg = get_token_from_AST.get_token(fp, True)
+    #alllines, linenum = all_if_as_bugs(fp)
+    if len(token_list):
+      all_token_list.append(token_list)
+      all_token_label.append(token_label)
+      all_line_list.append(line_list)
+
+      for i in type_list_pos:
+          globaltype_pos[i] += 1
+      for j in type_list_neg:
+          globaltype_neg[j] += 1
+    
+    if filecount == 500:
+        print("500 files written")
+        
+        with open("token.txt", 'a', encoding="utf-8") as fp:
+            for i in all_token_list:
+                fp.writelines("%s\n" % item  for item in i)                        
+        with open("token_label.txt", 'a', encoding="utf-8") as fp:
+            for i in all_token_label:
+                fp.writelines("%s\n" % item  for item in i)
+        with open("line_list.txt", 'a', encoding="utf-8") as fp:
+            for i in all_line_list:
+                fp.writelines("%s\n" % item  for item in i)
+                
+        all_token_list  = []
+        all_token_label = []
+        all_line_list   = []
+        filecount = 0
+
+    write_json_file(globaltype_pos,"global_pos.json")
+    write_json_file(globaltype_neg,"global_neg.json")
 
     #for i,j in zip(token_list, token_label):
       #print(i,j)
@@ -92,7 +145,7 @@ def save_token(list_of_json_file_paths, token_embedding):
 
 
     
- 
+    """
     if len(token_list):
       for lab in token_label:
         label_list.append(lab)
@@ -109,7 +162,8 @@ def save_token(list_of_json_file_paths, token_embedding):
           print("issue list : ", line)
   
     #print("---------------------------------------------------------")
-
+    """
+  """
   assert len(fasttext_token) == len(label_list)
 
   print(len(fasttext_token),len(label_list))
@@ -123,7 +177,8 @@ def save_token(list_of_json_file_paths, token_embedding):
   torch.save(label, 'label.pt')
 
   return padded, label
-
+  """
+  return [], []
 def binary_accuracy(preds, y):
   rounded_preds = torch.round(preds)
   correct = (rounded_preds == y).float() 
@@ -191,7 +246,7 @@ def train_model(list_of_json_file_paths: List[str], token_embedding: fasttext.Fa
     label         = torch.load('label.pt')
 
   print("Padded size", input_feature.shape, label.shape, torch.sum(label))
-  #return 
+  return 
   X_train, X_valid, y_train, y_valid = train_test_split(input_feature.numpy(), label.numpy(), test_size=0.2)
   train_ds = CreateDataSet(X_train, y_train)
   valid_ds = CreateDataSet(X_valid, y_valid)

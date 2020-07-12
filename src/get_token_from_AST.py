@@ -42,7 +42,7 @@ def get_token(file_path, Get_Negative = False):
         try:
             program = visitor.objectify(data["ast"])
         except:
-            print("ERROR : ", file_path)
+            #print("ERROR : ", file_path)
             return token_list, token_label, line_list, type_list_pos,type_list_neg
         try:
             for node in program.traverse():
@@ -65,7 +65,7 @@ def get_token(file_path, Get_Negative = False):
             return token_list, token_label, line_list, type_list_pos,type_list_neg
 
         except:
-           print("Traverse Error .. ",file_path)
+           #print("Traverse Error .. ",file_path)
            return token_list, token_label, line_list, type_list_pos,type_list_neg     
     else:
         #print("file read error")
