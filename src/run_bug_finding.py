@@ -48,8 +48,9 @@ def find_bugs_in_js_files(list_of_json_file_paths: List[str], token_embedding: f
     #####################################################
     #count = 0
 
-    train = False
+    train = True
     max_len = 35
+    
     if train:
         model.train_model(list_of_json_file_paths, token_embedding)
         return None
@@ -69,10 +70,10 @@ def find_bugs_in_js_files(list_of_json_file_paths: List[str], token_embedding: f
                     
                     if len(line) >= max_len:
                         line = line[0:max_len]
-                        count_chop+=1
+
                     else:
                         while len(line) < max_len:
-                          line.append("pad")                    
+                          line.append("_PAD")                    
 
                     
                     linetoken = []
@@ -88,7 +89,7 @@ def find_bugs_in_js_files(list_of_json_file_paths: List[str], token_embedding: f
                 tensor_bug_label = torch.tensor(token_label)
                 
                 for i, y in enumerate(pred_tensor):
-                    if y > 0.70:
+                    if y > 0.50:
                         #print("bug ",y, token_list[i])
                         bug_list.append(line_list[i])
                     #else:

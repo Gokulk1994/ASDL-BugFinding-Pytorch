@@ -2,7 +2,8 @@ import TypeChecker
 
 def gen_binary_exp_token(assign_tree, call_from_main):
 
-    wrong_op = {">"  : "<",
+    wrong_op = {
+                ">"  : "<",
                 "<"  : "> ",
                 ">=" : "<=",
                 "<=" : ">=",

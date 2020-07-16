@@ -8,6 +8,8 @@ def gen_assign_exp_token(assign_tree,call_from_main):
     left, _  = TypeChecker.check_type_get_token(assign_tree.left)
     right, _ = TypeChecker.check_type_get_token(assign_tree.right)
 
+    #print("Assign op ", op)
+    
     x_pos = x_pos + left
     x_pos = x_pos + [op]
     x_pos = x_pos + right

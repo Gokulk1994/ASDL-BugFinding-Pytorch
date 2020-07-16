@@ -5,7 +5,8 @@ def gen_unary_exp_token(assign_tree,call_from_main):
     x_pos = []
     x_neg = []
 
-    unary_operator = ["!", "~", "-"]
+    #unary_operator = ["!", "~", "-"]
+    unary_operator = ["!"]
 
     arg, _ = TypeChecker.check_type_get_token(assign_tree.argument)
 
@@ -15,6 +16,9 @@ def gen_unary_exp_token(assign_tree,call_from_main):
     # negated condition
     if op in unary_operator:
         x_neg += arg
-        
+
+    ################ Remove this line ################
+    #x_neg = []
+    
     return x_pos, x_neg
        

@@ -114,6 +114,7 @@ def save_token(list_of_json_file_paths, token_embedding):
           globaltype_pos[i] += 1
       for j in type_list_neg:
           globaltype_neg[j] += 1
+
     
     if filecount == 500:
         print("500 files written")
@@ -245,7 +246,7 @@ def train_model(list_of_json_file_paths: List[str], token_embedding: fasttext.Fa
     input_feature = torch.load('padded.pt')
     label         = torch.load('label.pt')
 
-  print("Padded size", input_feature.shape, label.shape, torch.sum(label))
+  #print("Padded size", input_feature.shape, label.shape, torch.sum(label))
   return 
   X_train, X_valid, y_train, y_valid = train_test_split(input_feature.numpy(), label.numpy(), test_size=0.2)
   train_ds = CreateDataSet(X_train, y_train)

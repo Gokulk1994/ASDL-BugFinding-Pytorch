@@ -21,9 +21,8 @@ class Node(abc.ABC):
             setattr(self, field, objectify(data.get(field)))
 
         #self.range = data.get('range')
-        self.loc = data.get('loc')
+        #self.loc = data.get('loc')
 
-        self.Useful_Fields = []
 
     def traverse(self) -> Generator['Node', None, None]:
         """Pre-order traversal of this node and all of its children."""
@@ -52,12 +51,17 @@ def objectify(data: Union[None, Dict[str, Any], List[Dict[str, Any]]]) -> Union[
     if isinstance(data, dict):
         if 'type' not in data:
             # Literal values can be empty dictionaries, for example.
+            if not isinstance(data,int) and not isinstance(data,str):
+                #print("unwanted data :", data)
+                pass
             return data
         # Transform the type into the appropriate class.
+
         node_class = globals().get(data['type'])
 
         if not node_class:
-            print(data['type'])
+            #print("Not in node class", data['type'])
+            pass 
         
         if not node_class:
             raise UnknownNodeTypeError(data['type'])

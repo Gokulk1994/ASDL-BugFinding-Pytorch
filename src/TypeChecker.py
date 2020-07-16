@@ -45,7 +45,7 @@ def check_type_get_token(test_tree, call_from_main = False):
         
 
     elif test_type == "UpdateExpression":
-        x_pos, x_neg = UpdateExpression.gen_unary_exp_token(test_tree,call_from_main)
+        x_pos, x_neg = UpdateExpression.gen_update_exp_token(test_tree,call_from_main)
 
     else:
         pass

@@ -1,6 +1,6 @@
 import TypeChecker
 
-def gen_unary_exp_token(update_tree,call_from_main):
+def gen_update_exp_token(update_tree,call_from_main):
     op = update_tree.operator
     prefix = update_tree.prefix
     
