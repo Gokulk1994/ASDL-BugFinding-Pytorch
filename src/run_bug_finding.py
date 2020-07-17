@@ -11,7 +11,10 @@ import get_token_from_AST
 import model
 from torch.nn.utils.rnn import pack_padded_sequence, pad_sequence
 
-
+# Enable Training of the model or just predict solution for a given file
+TRAIN_START = False
+MAX_LEN = 35
+BUG_THRESHOLD = 0.7
     
 def find_bugs_in_js_files(list_of_json_file_paths: List[str], token_embedding: fasttext.FastText) -> Dict[str, List[int]]:
     """
@@ -38,41 +41,35 @@ def find_bugs_in_js_files(list_of_json_file_paths: List[str], token_embedding: f
             }
     """
 
-    #####################################################
-    #                                                   #
-    #   1. Write your code below.                       #
-    #   2. You may use the read_json_file() helper      #
-    #      function to read a JSON file.                #
-    #   3. Return a dict with the found bugs from here. #
-    #                                                   #
-    #####################################################
-    #count = 0
 
-    train = True
-    max_len = 35
-    
-    if train:
-        model.train_model(list_of_json_file_paths, token_embedding)
+    if TRAIN_START:
+        # Generate tokens and train the model
+        model.train_model(list_of_json_file_paths, token_embedding, MAX_LEN)
         return None
-    else:
+    else: # Load the existing model to predict results
         predicted_results = defaultdict(list)
-        frozen_model = model.load_model()
+
+        # use pytorch load method to load the model
+        frozen_model = model.load_model("trained_model.pt")
         frozen_model.eval()
         
+        # iterate through all the files
         for fp in list_of_json_file_paths:
-            #token_list, token_label, line_list,__,_ = find_bugs(fp, token_embedding)
+            # generate tokens from the AST tree for all if conditionals . FALSE indicate disabling of Negative(BUG) tokens
             token_list, token_label, line_list,__,_  = get_token_from_AST.get_token(fp, False)
+            
             bug_list = []
             fasttext_token = []
 
             if len(token_list):
-                for line in token_list:
-                    
-                    if len(line) >= max_len:
-                        line = line[0:max_len]
+                
+                # Trim token list to the maximum length. if token list length is less than the maximum length, add padding "_PAD"
+                for line in token_list:                    
+                    if len(line) >= MAX_LEN:
+                        line = line[0:MAX_LEN]
 
                     else:
-                        while len(line) < max_len:
+                        while len(line) < MAX_LEN:
                           line.append("_PAD")                    
 
                     
@@ -82,28 +79,24 @@ def find_bugs_in_js_files(list_of_json_file_paths: List[str], token_embedding: f
                     fasttext_token.append(torch.tensor(linetoken))
 
                 padded = pad_sequence(fasttext_token, batch_first=True)
-                #packed = pack_padded_sequence(padded,lengths=torch.tensor(35), batch_first=True, enforce_sorted=False)
+                
+                #predict results from the trained model
                 pred_y = frozen_model(padded)
                 pred_tensor = torch.squeeze(pred_y,dim=1)
-
-                tensor_bug_label = torch.tensor(token_label)
                 
+                # if prediciton result is greater than threshold, consider the if condition as bug.
                 for i, y in enumerate(pred_tensor):
-                    if y > 0.50:
+                    if y > BUG_THRESHOLD:
                         #print("bug ",y, token_list[i])
                         bug_list.append(line_list[i])
-                    #else:
-                        #print("no bug", y, tensor_bug_label[i], token_list[i])
             else:
                 bug_list = []
             
-            #count += len(bug_list)
-        
             if len(bug_list):
                 for i in bug_list:
                     predicted_results[fp].append(i)
             else:
                 predicted_results[fp] = []
                 
-        #print("count : ",count)    
+        # return the dictionary with file name as key and linelist as values 
         return dict(predicted_results)

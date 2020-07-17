@@ -1,20 +1,24 @@
 import torch  # -> version --> 1.5.0
 import torch.nn as nn
 import os
-from bug_finder import find_bugs
+
+import json
+import codecs
 import fasttext
+
 from typing import List, Dict, Union, DefaultDict
 from torch.nn.utils.rnn import pad_sequence
 from torch.utils.data import Dataset, DataLoader
 from sklearn.model_selection import train_test_split
 import numpy as np
+
 import get_token_from_AST
-from collections import Counter
 
 
-import json
-import codecs
-from typing import List, Dict
+NUM_EPOCHS       = 5   # Number of epochs
+BATCH_SIZE       = 64   # batch size
+TRAIN_TEST_SPLIT = 0.2  # split % of train data and test data
+TRAIN_ALL        = True # Train with all input data. No splitting into validation data
 
 def write_json_file(data, file_path):
     try:
@@ -25,19 +29,41 @@ def write_json_file(data, file_path):
         print(f"Could not write to {file_path} because {e}")
 
 
+"""
+Class to create dataset as batches when using dataloader
+"""
 class CreateDataSet(Dataset):
-  def __init__(self, X, Y):
-      self.X = X
-      self.y = Y
-      
-  def __len__(self):
-      return len(self.y)
-  
-  def __getitem__(self, idx):
-      return torch.from_numpy(self.X[idx]),self.y[idx]
 
+  def __init__(self, X, Y):
+    """
+    Constructor : store the input feature and label
+    """
+    self.X = X
+    self.y = Y
+
+  def __len__(self):
+    """
+    returns the length of the samples
+    """ 
+    return len(self.y)
+  
+
+  def __getitem__(self, idx):
+    """
+    fetches the data samples from specific index
+    """
+    return torch.from_numpy(self.X[idx]),self.y[idx]
+
+
+"""
+Bug Finder model trained to predict the bugs in the model
+"""
 class BugFinderModel(nn.Module):
+
   def __init__(self, input_size, hidden_size, output_size,num_layers):
+    """
+    Define all layers and their parameters for this model
+    """
     super(BugFinderModel, self).__init__()
 
     self.lstm = nn.LSTM(input_size   = input_size, 
@@ -53,6 +79,11 @@ class BugFinderModel(nn.Module):
     self.output   = nn.Sigmoid()
 
   def forward(self, input_feature):
+    """
+    Function will be called during forward pass of the model training
+    provide input feature to the series of layer 
+    """
+    
     output_lstm, (hidden_op, cell_op) = self.lstm(input_feature)
     drop_out_layer = self.dropout(hidden_op[-1])
 
@@ -64,96 +95,47 @@ class BugFinderModel(nn.Module):
 
     return prediction
      
-NUM_EPOCHS = 10
-BATCH_SIZE = 32
 
 
-def all_if_as_bugs(json_file):
-    data = get_token_from_AST.read_json_file(json_file)
-    if data != []:
-      raw_code = data['raw_source_code']
-      split_rawcode = raw_code.split("\n")
-      ifcase_linenumber = []
-      for i,line in enumerate(split_rawcode):
-          if (('if (' in line) or ('if(' in line)) and '//' not in line and '/**' not in line and line[0] != '*' and '/*' not in line and '*' not in line:
-              ifcase_linenumber.append(i+1)
-      return len(ifcase_linenumber), ifcase_linenumber
-    else:
-      return -1, []
-
-def load_model():
+def load_model(model_name):
+  """
+  Load and return the provided model_name file
+  """
   cur_dir_path = os.path.dirname(os.path.realpath(__file__))
-  saved_model_path = os.path.join(cur_dir_path, "trained_model.pt")
+  saved_model_path = os.path.join(cur_dir_path, model_name)
   loaded_model = torch.load(saved_model_path)
 
   return loaded_model
 
-def save_token(list_of_json_file_paths, token_embedding):
+def save_token(list_of_json_file_paths, token_embedding, max_len):
+  """
+  Generate and save the token of each If condition from the given set of json_files
+  """
+
   fasttext_token = []
   label_list = []
   line  = []
 
-  all_token_list  = []
-  all_token_label = []
-  all_line_list   = []
-  globaltype_pos = Counter()
-  globaltype_neg = Counter()
-  filecount = 0
-
   print("file count : ",len(list_of_json_file_paths))
+  
   for fp in list_of_json_file_paths:
-    filecount += 1
-    token_list, token_label, line_list,type_list_pos,type_list_neg = get_token_from_AST.get_token(fp, True)
-    #alllines, linenum = all_if_as_bugs(fp)
-    if len(token_list):
-      all_token_list.append(token_list)
-      all_token_label.append(token_label)
-      all_line_list.append(line_list)
-
-      for i in type_list_pos:
-          globaltype_pos[i] += 1
-      for j in type_list_neg:
-          globaltype_neg[j] += 1
-
     
-    if filecount == 500:
-        print("500 files written")
-        
-        with open("token.txt", 'a', encoding="utf-8") as fp:
-            for i in all_token_list:
-                fp.writelines("%s\n" % item  for item in i)                        
-        with open("token_label.txt", 'a', encoding="utf-8") as fp:
-            for i in all_token_label:
-                fp.writelines("%s\n" % item  for item in i)
-        with open("line_list.txt", 'a', encoding="utf-8") as fp:
-            for i in all_line_list:
-                fp.writelines("%s\n" % item  for item in i)
-                
-        all_token_list  = []
-        all_token_label = []
-        all_line_list   = []
-        filecount = 0
-
-    write_json_file(globaltype_pos,"global_pos.json")
-    write_json_file(globaltype_neg,"global_neg.json")
-
-    #for i,j in zip(token_list, token_label):
-      #print(i,j)
+    # get the token from AST tree
+    token_list, token_label, _, __,___ = get_token_from_AST.get_token(fp, True)
     
-    #if alllines > len(pos_list):  
-    #print(fp, alllines,",",len(pos_list),",",len(neg_list))
-    #print("------------------------------------------------")
-
-
-    
-    """
+    # add padding to token list when the length of token list is less than mas_len. If higher, then trim the token list
     if len(token_list):
       for lab in token_label:
         label_list.append(lab)
       
       for line in token_list:
-        #print(line)
         linetoken = []
+        if len(line) >= max_len:
+            line = line[0:max_len]
+        else:
+            while len(line) < max_len:
+              line.append("_PAD")      
+
         for token in line:
           linetoken.append(token_embedding[token])
         
@@ -161,117 +143,177 @@ def save_token(list_of_json_file_paths, token_embedding):
           fasttext_token.append(torch.tensor(linetoken))
         else:
           print("issue list : ", line)
-  
-    #print("---------------------------------------------------------")
-    """
-  """
+
   assert len(fasttext_token) == len(label_list)
 
-  print(len(fasttext_token),len(label_list))
-    
-  #print("padding started")
   if len(fasttext_token):
     padded = pad_sequence(fasttext_token, batch_first=True)
     label  = torch.tensor(label_list)
-  #print("padding ended")
-  torch.save(padded, 'padded.pt')
+
+  torch.save(padded, 'input_data.pt')
   torch.save(label, 'label.pt')
 
   return padded, label
+
+def accuracy_estimation(prediction, actual):
   """
-  return [], []
-def binary_accuracy(preds, y):
-  rounded_preds = torch.round(preds)
-  correct = (rounded_preds == y).float() 
-  acc = correct.sum() / len(correct)
-  return acc
+  Evaluate the accuracy of the model
+  args : 
+    prediction : predicted value from the model
+    actual     : actual labels of the batch
+  """
+  correct = (torch.round(prediction) == actual).float() 
+  accuracy = correct.sum() / len(correct)
+
+  return accuracy
 
 def train(model, train_dl, optimizer, criterion):
-  
-  epoch_loss = 0
-  epoch_acc = 0
-  
+  """
+  Forward pass of the model to train the network and learn the weights during backward pass using the optimizer
+  args:
+    model : generated binary classifier model
+    train_dl : training data loaded using pytorch DataLoader
+    optimizer : optimizer to be used during back propogation
+    criterion : cost function to calculate loss value
 
+  """
+
+  total_loss = 0
+  total_acc = 0
+  
+  # run model in training mode, so that some features like dropout will be enabled
   model.train()  
-  print("Training started")
-  Batch = 0
-  for x, y in train_dl:
 
-    Batch += 1
+  print("Training in Progress....")
 
+
+  for input_data, actual_label in train_dl:
+    
     optimizer.zero_grad()    
     
-    predictions = model(x).squeeze()
-    loss = criterion(predictions, y.float())        
-    acc = binary_accuracy(predictions, y)   
+    # predict values for input using forward pass
+    predicted_label = model(input_data).squeeze()
 
+    # Estimate Binary cross entropy loss
+    loss = criterion(predicted_label, actual_label.float())        
+
+    # find the accuracy of the model by comapring predicted and actual results
+    accuracy = accuracy_estimation(predicted_label, actual_label)   
+
+    # optimizing through back propogation
     loss.backward()       
     optimizer.step()      
     
-    epoch_loss += loss.item()  
-    epoch_acc += acc.item()    
+    # accumulate the loss value to get average loss over all the epochs
+    total_loss += loss.item()  
+    total_acc  += accuracy.item()    
+  
+  print("Training completed")
       
-  return epoch_loss / len(train_dl), epoch_acc / len(train_dl)
+  return total_loss / len(train_dl), total_acc / len(train_dl)
 
 def evaluate(model, valid_dl, criterion):
+  """
+  Evaluate the performance of the model with test data samples
+  args:
+    model : generated binary classifier model
+    train_dl : training data loaded using pytorch DataLoader
+    optimizer : optimizer to be used during back propogation
+    criterion : cost function to calculate loss value
 
-  epoch_loss = 0
-  epoch_acc = 0
+  """
+  total_loss = 0
+  total_acc = 0
 
-
+  # run model in evaluate mode, so that some features like dropout will be disabled
   model.eval()
-  print("evaluation Started")
-  Batch = 0
 
+  print("Evaluation in progress")
+
+  # stop optimization of network
   with torch.no_grad():
-    for x, y in valid_dl:
-      Batch += 1
-   
-      predictions = model(x).squeeze()
-
-      loss = criterion(predictions,y.float())
-      acc = binary_accuracy(predictions, y)
+    for input_data, actual_label in valid_dl:
       
-      epoch_loss += loss.item()
-      epoch_acc += acc.item()
-    
-  return epoch_loss / len(valid_dl), epoch_acc / len(valid_dl)
+      # predict values for test data using forward pass
+      predicted_label = model(input_data).squeeze()
+
+      # Estimate Binary cross entropy loss
+      loss = criterion(predicted_label,actual_label.float())
+
+      # find the accuracy of the model by comparing predicted and actual results
+      accuracy = accuracy_estimation(predicted_label, actual_label)
+      
+      # accumulate the loss value to get average loss over all the epochs
+      total_loss += loss.item()
+      total_acc += accuracy.item()
+  print("Evaluation completed")
+  return total_loss / len(valid_dl), total_acc / len(valid_dl)
 
 
-def train_model(list_of_json_file_paths: List[str], token_embedding: fasttext.FastText):
-  
-  if not os.path.exists('padded.pt'):
-    input_feature, label = save_token(list_of_json_file_paths, token_embedding)
+def train_model(list_of_json_file_paths: List[str], token_embedding: fasttext.FastText, max_len = 35):
+
+  """
+  Generate token, split train and test set, train and validate the model
+  args:
+    list_of_json_file_paths : list of json file path
+    token_embedding : fasttext token embedding to convert text to tokens
+    max_len : allowed maximum length of tokens for a condition
+
+  """
+
+  # if data is not available, geenrate tokens from json_file, else use the available data
+  if not os.path.exists('input_data.pt'):
+    input_feature, label = save_token(list_of_json_file_paths, token_embedding, max_len)
   else:
-    input_feature = torch.load('padded.pt')
+    input_feature = torch.load('input_data.pt')
     label         = torch.load('label.pt')
 
-  #print("Padded size", input_feature.shape, label.shape, torch.sum(label))
-  return 
-  X_train, X_valid, y_train, y_valid = train_test_split(input_feature.numpy(), label.numpy(), test_size=0.2)
-  train_ds = CreateDataSet(X_train, y_train)
-  valid_ds = CreateDataSet(X_valid, y_valid)
+  print("Input data size", input_feature.shape, label.shape, torch.sum(label))
 
-  train_dl = DataLoader(train_ds, batch_size=BATCH_SIZE, shuffle=True)
-  val_dl   = DataLoader(valid_ds, batch_size=BATCH_SIZE)
+  # split the data into train and test based on TRAIN_TEST_SPLIT ratio
+  X_train, X_valid, y_train, y_valid = train_test_split(input_feature.numpy(), label.numpy(), test_size=TRAIN_TEST_SPLIT)
+  
+  if not TRAIN_ALL:
+    # create the dataset class for the input feature
+    train_ds = CreateDataSet(X_train, y_train)
+    valid_ds = CreateDataSet(X_valid, y_valid)
 
-  new_model = BugFinderModel(input_size=100,hidden_size=100,output_size=1,num_layers=1)
-  print(new_model)
+    # Split the data into batches and shuffle 
+    train_dl = DataLoader(train_ds, batch_size=BATCH_SIZE, shuffle=True)
+    val_dl   = DataLoader(valid_ds, batch_size=BATCH_SIZE)
+  else:
+    all_data_ds = CreateDataSet(input_feature.numpy(), label)
+    all_data_dl = DataLoader(all_data_ds, batch_size=BATCH_SIZE)
 
+  # bug finder model
+  bug_finder = BugFinderModel(input_size=100,hidden_size=100,output_size=1,num_layers=1)
+  print(bug_finder)
+
+  # binary cross entropy loss 
   criterion = nn.BCELoss()
-  optimizer = torch.optim.Adam(new_model.parameters(),lr = 0.001)
+  optimizer = torch.optim.Adam(bug_finder.parameters(),lr = 0.001)
 
   for epoch in range(NUM_EPOCHS):
 
-    print("Epoch : ",epoch)
-    train_loss, train_acc = train(new_model, train_dl, optimizer, criterion)
+    print("Current Epoch : ",epoch)
+
+    if not TRAIN_ALL:
+      # Training the model using train data
+      train_loss, train_acc = train(bug_finder, train_dl, optimizer, criterion)
+      
+      # evaluating using validation data
+      valid_loss, valid_acc = evaluate(bug_finder, val_dl, criterion)
   
+      print(f'\tTrain  Loss: {train_loss:.3f} | Train Acc : {train_acc*100:.2f}%')
+      print(f'\tValid. Loss: {valid_loss:.3f} | Valid. Acc: {valid_acc*100:.2f}%')
+    else:
+      # Training the model using all the input data
+      all_train_loss, all_train_acc = train(bug_finder, all_data_dl, optimizer, criterion)
+      
+      print(f'\tTrain  Loss: {all_train_loss:.3f} | Train Acc : {all_train_acc*100:.2f}%')
+      
 
-    valid_loss, valid_acc = evaluate(new_model, val_dl, criterion)
-    
-    print(f'\tTrain Loss: {train_loss:.3f} | Train Acc: {train_acc*100:.2f}%')
-    print(f'\t Val. Loss: {valid_loss:.3f} |  Val. Acc: {valid_acc*100:.2f}%')
-
-  torch.save(new_model, 'trained_model.pt')
-  torch.save(new_model.state_dict(), 'model_state.pt')
+  # save the trained model
+  torch.save(bug_finder, 'trained_model.pt')
+  torch.save(bug_finder.state_dict(), 'model_state.pt')
 

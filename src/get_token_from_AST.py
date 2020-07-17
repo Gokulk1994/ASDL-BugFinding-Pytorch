@@ -6,11 +6,6 @@ from TypeChecker import check_type_get_token
 from collections import Counter
 
 
-class UnknownNodeTypeError(Exception):
-    """Raised if we encounter a node with an unknown type."""
-    pass
-
-
 def read_json_file(json_file_path: str) -> List:
     """ Read a JSON file given path """
     try:
@@ -27,28 +22,42 @@ def read_json_file(json_file_path: str) -> List:
         return []
 
 def get_token(file_path, Get_Negative = False):
-    if_nodes = []
+    """
+    Generate string tokens from the AST tree
+    args:
+        file_path : path of input json_file
+        Get_negative : if True, returns negative cases, else will not return -ve cases(useful during testing)
+    """
+
     line_list = []
-    test_list = []
     token_list = []
     token_label = []
-    token_line_num = []
+
 
     type_list_pos = []
     type_list_neg = []
 
     data = read_json_file(file_path)
+
     if data != []:
+
+        # get all the nodes from the AST tree
         try:
             program = visitor.objectify(data["ast"])
         except:
             print("ERROR : ", file_path)
             return token_list, token_label, line_list, type_list_pos,type_list_neg
+
+        # traverse across all nodes and access the If conditions    
         try:
             for node in program.traverse():
                 if node.type == "IfStatement":
+                    # get the no bug (original) and bug (generated) string token for each if case
                     x_pos, x_neg = check_type_get_token(node.test, True)
                     
+
+
+                    # store both positive and negative samples, labels and its line number. Add "_END" to all token , indicating end of token list
                     if len(x_pos):
                         x_pos += ["_END"]
                         token_list.append(x_pos)
@@ -64,6 +73,7 @@ def get_token(file_path, Get_Negative = False):
                         type_list_neg.append(node.test.type)
 
             assert len(token_list) == len(line_list) == len(token_label)
+
             return token_list, token_label, line_list, type_list_pos,type_list_neg
 
         except:

@@ -14,6 +14,7 @@ Run this script as:
 from typing import List, Dict
 import argparse
 from pathlib import Path
+from model import BugFinderModel
 import run_bug_finding
 import json
 import codecs
@@ -22,7 +23,7 @@ import sys
 import os
 import os.path
 import fasttext
-from model import BugFinderModel
+
 
 
 def write_json_file(data: Dict, file_path: str) -> None:

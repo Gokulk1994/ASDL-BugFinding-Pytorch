@@ -7,7 +7,15 @@ import MemberExpression
 import UpdateExpression
 
 def check_type_get_token(test_tree, call_from_main = False):
-
+    """
+    Get the type of the test tree and return the corresponding positive and negative tokens
+    args:
+        test_tree : test node of the if condition from AST tree
+        call_from_main : to check function is called my main or as a part of sub expression
+    
+    return:
+        list of correct and incorrect tokens
+    """
     test_type = test_tree.type
 
     x_pos = [test_type]

@@ -1,3 +1,4 @@
+"""source code adapted from : https://github.com/austinbyers/esprima-ast-visitor"""
 """Trasnforms AST dictionary into a tree of Node objects."""
 import abc
 from collections import OrderedDict
